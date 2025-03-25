@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: springboot-crud-k8s
-          image: springboot-crud-k8s:1.0
+          image: 904474184257.dkr.ecr.us-east-2.amazonaws.com/my-docker-repo
           ports:
             - containerPort: 8081
           env:   # Setting Enviornmental Variables
