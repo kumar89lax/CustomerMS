@@ -14,27 +14,27 @@ spec:
     spec:
       containers:
         - name: springboot-crud-k8s
-          image: 904474184257.dkr.ecr.us-east-2.amazonaws.com/my-docker-repo
+          image: laxmanjavaappdev/springboot-app:latest  # Replace with your actual Docker Hub repo
           ports:
             - containerPort: 8081
-          env:   # Setting Enviornmental Variables
-            - name: DB_HOST   # Setting Database host address from configMap
+          env:   # Setting Environmental Variables
+            - name: DB_HOST   # Setting Database host address
               value: mysql
 
-            - name: DB_NAME  # Setting Database name from configMap
+            - name: DB_NAME  # Setting Database name
               value: DataDB
 
-            - name: DB_USERNAME  # Setting Database username from Secret
+            - name: DB_USERNAME  # Setting Database username
               value: root
 
-            - name: DB_PASSWORD # Setting Database password from Secret
+            - name: DB_PASSWORD # Setting Database password
               value: root
 
 ---
 
 apiVersion: v1 # Kubernetes API version
 kind: Service # Kubernetes resource kind we are creating
-metadata: # Metadata of the resource kind we are creating
+metadata:
   name: springboot-crud-svc
 spec:
   selector:
