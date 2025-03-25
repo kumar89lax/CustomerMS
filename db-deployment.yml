@@ -1,4 +1,4 @@
-# Define a 'ConfigMap' for MySQL Configuration
+# ConfigMap for MySQL Configuration
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,7 +7,8 @@ data:
   MYSQL_DATABASE: DataDB
 
 ---
-# Define a 'Persistent Volume Claim' (PVC) for MySQL Storage
+
+# Persistent Volume Claim (PVC) for MySQL Storage
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -24,7 +25,8 @@ spec:
   # storageClassName: mysql-storage
 
 ---
-# Configure 'Deployment' of MySQL Server
+
+# MySQL Deployment Configuration
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -65,12 +67,12 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 3306
-            initialDelaySeconds: 20
+            initialDelaySeconds: 10
             periodSeconds: 5
           livenessProbe:
             tcpSocket:
               port: 3306
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             periodSeconds: 10
 
       volumes:
@@ -79,7 +81,8 @@ spec:
             claimName: mysql-pv-claim
 
 ---
-# Define a 'Service' to Expose MySQL to Other Services
+
+# Service to expose MySQL internally
 apiVersion: v1
 kind: Service
 metadata:
