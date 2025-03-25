@@ -1,39 +1,38 @@
-# ConfigMap for MySQL Configuration
+# MySQL Configuration
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mysql-config
 data:
-  MYSQL_DATABASE: DataDB
+  MYSQL_DATABASE: "DataDB"
+  MYSQL_ROOT_PASSWORD: "root"  # Consider using a Secret for passwords
 
 ---
 
-# Persistent Volume Claim (PVC) for MySQL Storage
+# Persistent Volume Claim for MySQL
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mysql-pv-claim
-  labels:
-    app: mysql
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
-  # Uncomment the following line only if you have a StorageClass named 'mysql-storage'
-  # storageClassName: mysql-storage
+  # storageClassName: standard  # Uncomment and specify if needed
 
 ---
 
-# MySQL Deployment Configuration
+# MySQL Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mysql
+  name: mysql-deployment
   labels:
     app: mysql
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: mysql
@@ -47,10 +46,12 @@ spec:
       containers:
         - name: mysql
           image: mysql:5.7
-          command: ["mysqld", "--ignore-db-dir=lost+found"]
           env:
             - name: MYSQL_ROOT_PASSWORD
-              value: root
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: password
             - name: MYSQL_DATABASE
               valueFrom:
                 configMapKeyRef:
@@ -58,41 +59,57 @@ spec:
                   key: MYSQL_DATABASE
           ports:
             - containerPort: 3306
-              name: mysql
           volumeMounts:
-            - name: mysql-persistent-storage
+            - name: mysql-storage
               mountPath: /var/lib/mysql
-
-          # Health Checks
           readinessProbe:
-            tcpSocket:
-              port: 3306
-            initialDelaySeconds: 10
-            periodSeconds: 5
-          livenessProbe:
-            tcpSocket:
-              port: 3306
+            exec:
+              command:
+                - mysql
+                - -uroot
+                - -proot
+                - -e
+                - "SELECT 1"
             initialDelaySeconds: 15
             periodSeconds: 10
-
+          livenessProbe:
+            exec:
+              command:
+                - mysql
+                - -uroot
+                - -proot
+                - -e
+                - "SELECT 1"
+            initialDelaySeconds: 20
+            periodSeconds: 10
       volumes:
-        - name: mysql-persistent-storage
+        - name: mysql-storage
           persistentVolumeClaim:
             claimName: mysql-pv-claim
 
 ---
 
-# Service to expose MySQL internally
+# Secret for sensitive data (recommended)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+type: Opaque
+data:
+  password: cm9vdA==  # base64 encoded "root"
+
+---
+
+# MySQL Service
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql
-  labels:
-    app: mysql
+  name: mysql-service
 spec:
-  ports:
-    - port: 3306
-      targetPort: 3306
   selector:
     app: mysql
-  clusterIP: None  # Headless service for internal DNS
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+  clusterIP: None  # Headless service
