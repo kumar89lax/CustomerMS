@@ -1,7 +1,0 @@
-apiversion: '3'
-kind: ConfigMap
-metadata:
-  name: db-conf
-data:
-  host: localhost
-  name: natwestdb
