@@ -14,14 +14,14 @@ metadata:
   name: mysql-pv-claim
   labels:
     app: mysql
-    tier: database
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
-  storageClassName: mysql-storage  # Ensure this exists in your cluster
+  # Uncomment the following line only if you have a StorageClass named 'mysql-storage'
+  # storageClassName: mysql-storage
 
 ---
 # Configure 'Deployment' of MySQL Server
@@ -31,25 +31,21 @@ metadata:
   name: mysql
   labels:
     app: mysql
-    tier: database
 spec:
   selector:
     matchLabels:
       app: mysql
-      tier: database
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
         app: mysql
-        tier: database
     spec:
       containers:
-        - image: mysql:5.7
-          args:
-            - "--ignore-db-dir=lost+found"
-          name: mysql
+        - name: mysql
+          image: mysql:5.7
+          command: ["mysqld", "--ignore-db-dir=lost+found"]
           env:
             - name: MYSQL_ROOT_PASSWORD
               value: root
@@ -58,7 +54,6 @@ spec:
                 configMapKeyRef:
                   name: mysql-config
                   key: MYSQL_DATABASE
-
           ports:
             - containerPort: 3306
               name: mysql
@@ -68,13 +63,13 @@ spec:
 
           # Health Checks
           readinessProbe:
-            exec:
-              command: ["mysqladmin", "ping", "-h", "localhost"]
+            tcpSocket:
+              port: 3306
             initialDelaySeconds: 20
             periodSeconds: 5
           livenessProbe:
-            exec:
-              command: ["mysqladmin", "ping", "-h", "localhost"]
+            tcpSocket:
+              port: 3306
             initialDelaySeconds: 30
             periodSeconds: 10
 
@@ -91,12 +86,10 @@ metadata:
   name: mysql
   labels:
     app: mysql
-    tier: database
 spec:
   ports:
     - port: 3306
       targetPort: 3306
   selector:
     app: mysql
-    tier: database
-  clusterIP: None  # We Use DNS, Thus ClusterIP is not relevant
+  clusterIP: None  # Headless service for internal DNS
